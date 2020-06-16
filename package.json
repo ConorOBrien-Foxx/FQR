@@ -2,7 +2,7 @@
   "name": "fqr",
   "version": "1.0.0",
   "description": "A light, extensible language",
-  "main": "fqr.js",
+  "main": "index.js",
   "scripts": {
     "test": "node test.js"
   },
