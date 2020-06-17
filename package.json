@@ -4,7 +4,7 @@
   "description": "A light, extensible language",
   "main": "index.js",
   "scripts": {
-    "test": "node test.js"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
