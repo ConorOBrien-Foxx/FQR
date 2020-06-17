@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/ConorOBrien-Foxx/FQR/issues"
   },
-  "homepage": "https://github.com/ConorOBrien-Foxx/FQR#readme"
+  "homepage": "https://github.com/ConorOBrien-Foxx/FQR#readme",
+  "devDependencies": {
+    "mocha": "^8.0.1"
+  }
 }
