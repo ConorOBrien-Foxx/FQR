@@ -40,6 +40,35 @@ class Token {
         return build;
     }
 
+    readable() {
+        let build = "";
+
+        if(typeof this.index === "number") {
+            build += this.index.toString().padStart(4, "0");
+        }
+        else {
+            build += "    ";
+        }
+        let symstr = this.type.toString().match(/(\w+)\)/)[1];
+        symstr = "(" + symstr + ")";
+        build += " " + symstr.padEnd(12, " ");
+
+        if(typeof this.arity === "number") {
+            build += ("@" + this.arity).padEnd(3, " ");
+        }
+        else {
+            build += "   ";
+        }
+
+        build += "  " + this.raw.toString();
+
+        if(this.next) {
+            build += "\n----" + this.next.readable();
+        }
+
+        return build;
+    }
+
     static swap(n) {
         let token = new Token("SWAP", Token.Types.Swap, null);
         token.arity = n;
@@ -79,7 +108,7 @@ const PARSE_REGEXES = [
     [/;/,               Token.Types.Sep],
     [/,/,               Token.Types.Comma],
     [/\d+/,             Token.Types.Number],
-    [/[+-\/*^@=.|~]/,   Token.Types.Op],
+    [/[+-\/*^@=.|~&]|=>|\/\//, Token.Types.Op],
     [/\s+/,             Token.Types.Space],
     [/[\[\]]/,          Token.Types.Bracket],
     [/[()]/,            Token.Types.Paren],

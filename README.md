@@ -11,6 +11,8 @@ a.b  a[b]       memory access
                 (.a)(b)  b.a
 n | f | g       pipes - g(f(n))
 a ~ b           a without b
+a // f          filter a by f
+f => a          map f over a
 
 planned
 
@@ -23,8 +25,5 @@ and, or, xor    logical comparison operators
 
 .+ .- ./ .* .^  vectorized operators
 
-
-f => a          map f over a
-a // f          filter a by f
 
 ```

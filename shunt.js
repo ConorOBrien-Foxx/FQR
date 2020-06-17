@@ -3,25 +3,28 @@ const { Token } = FQRParser;
 
 // precedence, isRight, held
 const OpAttribtues = {
-    ".": [ 110, false, (i, s) => s === 1 ? true : i === 1],
+    ".":  [ 110, false, (i, s) => s === 1 ? true : i === 1],
 
     [Token.Types.Callable]: [100, false],
 
-    "@": [ 90,  true  ],
+    "@":  [ 90,  true  ],
+    "&":  [ 90,  false ],
 
-    "^": [ 60,  true  ],
+    "^":  [ 60,  true  ],
 
-    "*": [ 30,  false ],
-    "/": [ 30,  false ],
+    "*":  [ 30,  false ],
+    "/":  [ 30,  false ],
 
-    "+": [ 10,  false ],
-    "-": [ 10,  false ],
+    "+":  [ 10,  false ],
+    "-":  [ 10,  false ],
 
-    "~": [ 7,   false ],
+    "~":  [ 7,   false ],
+    "//": [ 7,   false ],
+    "=>": [ 7,   false ],
 
-    "=": [ 5,   false, [ true, false ]],
+    "=":  [ 5,   false, [ true, false ]],
 
-    "|": [ 0,   false ],
+    "|":  [ 0,   false ],
 };
 
 class FQRShunter {
@@ -31,7 +34,6 @@ class FQRShunter {
     }
 
     *insertOp(token, unaryFlag) {
-        token.arity = unaryFlag ? 1 : 2;
         unaryFlag = true;
         let [ curPrecedence, curIsRight, curHeld ] = OpAttribtues[token.raw];
         token.held = curHeld || [];
@@ -40,7 +42,7 @@ class FQRShunter {
             token.held = (index) => held[index];
         }
 
-        if(token.arity === 2) {
+        if(token.type !== Token.Types.Op || token.arity >= 2) {
             let topToken, topPrecedence, topIsRight, allowPop;
             do {
                 allowPop = false;
@@ -50,7 +52,8 @@ class FQRShunter {
                     allowPop = topIsRight
                         ? topPrecedence >  curPrecedence
                         : topPrecedence >= curPrecedence;
-                    allowPop = allowPop || topToken.unary;
+                    // console.log("T~O~P",topToken)
+                    allowPop = allowPop || (topToken.arity === 1);
                 }
                 if(allowPop) {
                     yield topToken;
@@ -155,12 +158,47 @@ class FQRShunter {
                         res = Token.gatherArray(args, topToken.isFunction);
                     }
                     else if(topToken.isFunction) {
+                        // console.log("FunctionArity", args, topToken);
                         res = Token.functionArity(args);
                     }
                     if(res) {
                         if(topToken.isFunction) {
-                            yield Token.swap(args);
-                            unaryFlag = yield* this.insertOp(res, unaryFlag);
+                            // console.log("TOP", topToken);
+                            // console.log("opstack", this.opstack);
+                            let optop = this.opstack.pop();
+                            if(optop) {
+                                if(optop.type === Token.Types.Op) {
+                                    let myPrec = OpAttribtues[Token.Types.Callable][0];
+                                    console.log(optop.raw);
+                                    let prec = OpAttribtues[optop.raw][0];
+                                    // console.log("OPTOP", optop, prec, myPrec);
+                                    if(prec > myPrec)
+                                    {
+                                        yield Token.swap(args);
+                                        let needle = optop;
+                                        while(needle.next) {
+                                            needle = needle.next;
+                                        }
+                                        needle.next = res;
+                                    }
+                                    else {
+                                        yield res;
+                                    }
+                                }
+                                else {
+                                    yield res;
+                                }
+                                this.opstack.push(optop);
+                                // this.opstack.push(res);
+                                // unaryFlag = yield* this.insertOp(res, unaryFlag);
+                                // yield res;
+                            }
+                            else {
+                                yield res;
+                            }
+                            // console.log("res", res);
+                            // yield res;
+                            unaryFlag = false;
                         }
                         else {
                             yield res;
@@ -169,6 +207,7 @@ class FQRShunter {
                 }
             }
             else if(token.type === Token.Types.Op) {
+                token.arity = unaryFlag ? 1 : 2;
                 unaryFlag = yield* this.insertOp(token, unaryFlag);
             }
             else {

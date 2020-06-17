@@ -36,8 +36,8 @@ fqr.fns = {
     },
     propda: (key) => (obj) =>
         !obj
-                ? (obj, ...args) => obj[key.raw](...args)
-                : obj[key.raw],
+            ? (obj, ...args) => obj[key.raw](...args)
+            : obj[key.raw],
     pipe: (n, f) => f(n),
     has: (a, e) =>
         Array.isArray(a)
@@ -57,7 +57,15 @@ fqr.fns = {
             return res;
         }
     },
-    split: (str, on) => str.split(on),
+    map: (f, a) => a.map(e => f(e)),
+    bond: (a, b) => {
+        console.log(a,b);
+        let res = typeof a === "function"
+            ? (...rest) => a(...rest, b)
+            : (...rest) => b(a, ...rest);
+        console.log("res", res, res("a\nb"));
+        return res;
+    },
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -66,15 +74,18 @@ fqr.opFunction = (...fns) => function (...args) {
 }
 
 fqr.operators = {
-    "+": fqr.opFunction(fqr.fns.sum, fqr.fns.add2),
-    "-": fqr.opFunction(fqr.fns.negate, fqr.fns.sub2),
-    "/": fqr.opFunction(null, fqr.fns.div2),
-    "*": fqr.opFunction(null, fqr.fns.mul2),
-    "=": fqr.opFunction(null, fqr.fns.update),
-    ".": fqr.opFunction(fqr.fns.propda, fqr.fns.get),
-    "@": fqr.opFunction(fqr.fns.formFunction, fqr.fns.compose),
-    "|": fqr.opFunction(null, fqr.fns.pipe),
-    "~": fqr.opFunction(null, fqr.fns.without),
+    "+":  fqr.opFunction(fqr.fns.sum, fqr.fns.add2),
+    "-":  fqr.opFunction(fqr.fns.negate, fqr.fns.sub2),
+    "/":  fqr.opFunction(null, fqr.fns.div2),
+    "*":  fqr.opFunction(null, fqr.fns.mul2),
+    "=":  fqr.opFunction(null, fqr.fns.update),
+    ".":  fqr.opFunction(fqr.fns.propda, fqr.fns.get),
+    "@":  fqr.opFunction(fqr.fns.formFunction, fqr.fns.compose),
+    "|":  fqr.opFunction(null, fqr.fns.pipe),
+    "~":  fqr.opFunction(null, fqr.fns.without),
+    "&":  fqr.opFunction(null, fqr.fns.bond),
+    "=>": fqr.opFunction(null, fqr.fns.map),
+    "//": fqr.opFunction(null, fqr.fns.filter),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {
@@ -95,13 +106,16 @@ fqr.loadFile = function loadFile (pathToFile) {
 
 fqr.DefaultVariables = {
     print: console.log,
-    split: fqr.fns.split,
     lf: "\n",
     cr: "\r",
     sp: " ",
     tb: "\t",
     ws: /\s+/,
     le: /\r?\n/,
+    f: (a) => a*3,
+    g: (a) => a+1,
+    // f: (...args) => args.reverse(),
+    a: { f: (a,b,c)=>a+b }
 };
 
 fqr.run = function runScript (script, params) {
@@ -156,7 +170,13 @@ if(require.main === module) {
     if(flags.indexOf("S") !== -1) {
         const FQRShunter = require("./shunt.js");
         let shunted = FQRShunter.shunt(script);
-        console.log([...shunted].map(e => e.toString()));
+        // console.log([...shunted].map(e => e.toString()));
+        let i = 0;
+        for(let s of shunted) {
+            let is = (i + ":").padEnd(3, " ");
+            console.log(is, s.readable());
+            i++;
+        }
         return;
     }
 
