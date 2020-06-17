@@ -49,30 +49,54 @@ class FQRState {
         let postfix = FQRShunter.shunt(code);
 
         let stack = [];
+        let swap;
 
         for(let token of postfix) {
             if(token.isData()) {
                 stack.push(token);
             }
-            else if(token.type === Token.Types.Op || token.type === Token.Types.Arity) {
+            else if(token.type === Token.Types.Swap) {
+                swap = stack.splice(-token.arity);
+            }
+            else if(token.isCallable()) {
                 let held = token.held || [];
-                let args = stack.splice(-token.arity)
-                    .map((el, i) =>
-                        held[i]
-                            ? el.raw || el
-                            : this.parseValue(el)
-                    );
+                let args;
+                let after = [];
                 let fn;
                 if(token.type === Token.Types.Op) {
                     fn = this.fqr.operators[token.raw];
                 }
+                else if(token.type === Token.Types.Array) {
+                    fn = (...args) => args;
+                    if(token.isFunction) {
+                        fn = this.fqr.fns.get;
+                        let top = this.parseValue(stack.pop());
+                        after.push(top);
+                    }
+                }
                 else {
                     let top = stack.pop();
+                    args = swap;
                     fn = this.parseValue(top);
                 }
                 fn = fn.bind(this);
+
+                if(!args) {
+                    args = stack.splice(-token.arity)
+                       .map((el, i) =>
+                           held[i]
+                               ? el.raw || el
+                               : this.parseValue(el)
+                       )
+                       .concat(after);
+                }
+
                 let value = fn(...args);
                 stack.push(value);
+                if(swap) {
+                    stack.push(...swap);
+                    swap = null;
+                }
             }
         }
 

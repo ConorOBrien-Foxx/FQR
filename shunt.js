@@ -3,23 +3,58 @@ const { Token } = FQRParser;
 
 // precedence, isRight, held
 const OpAttribtues = {
-    "@": [ 90, true  ],
+    ".": [ 110, false, [ false, true ]],
 
-    "^": [ 60, true  ],
+    [Token.Types.Callable]: [100, false],
 
-    "*": [ 30, false ],
-    "/": [ 30, false ],
+    "@": [ 90,  true  ],
 
-    "+": [ 10, false ],
-    "-": [ 10, false ],
+    "^": [ 60,  true  ],
 
-    "=": [ 0,  false, [ true, false ]],
+    "*": [ 30,  false ],
+    "/": [ 30,  false ],
+
+    "+": [ 10,  false ],
+    "-": [ 10,  false ],
+
+    "=": [ 0,   false, [ true, false ]],
 };
 
 class FQRShunter {
     constructor(string) {
         this.parsed = FQRParser.parse(string);
         this.opstack = [];
+    }
+
+    *insertOp(token, unaryFlag) {
+        token.arity = unaryFlag ? 1 : 2;
+        unaryFlag = true;
+        let [ curPrecedence, curIsRight, curHeld ] = OpAttribtues[token.raw];
+        token.held = curHeld || [];
+
+        if(token.arity === 2) {
+            let topToken, topPrecedence, topIsRight, allowPop;
+            do {
+                allowPop = false;
+                topToken = this.opstack.pop();
+                if(topToken && topToken.type === Token.Types.Op) {
+                    [ topPrecedence, topIsRight ] = OpAttribtues[topToken.raw];
+                    allowPop = topIsRight
+                        ? topPrecedence >  curPrecedence
+                        : topPrecedence >= curPrecedence;
+                    allowPop = allowPop || topToken.unary;
+                }
+                if(allowPop) {
+                    yield topToken;
+                }
+                else if(topToken) {
+                    this.opstack.push(topToken);
+                }
+            } while(topToken && allowPop);
+        }
+        this.opstack.push(token);
+
+        return unaryFlag;
     }
 
     *flush() {
@@ -61,12 +96,13 @@ class FQRShunter {
                 unaryFlag = true;
                 yield* this.flushUntil(token =>
                     token.type === Token.Types.Comma
-                    || token.type === Token.Types.Paren
+                    || token.isBrace()
                 );
                 this.opstack.push(token);
             }
-            else if(token.type === Token.Types.Paren) {
-                if(token.raw === "(") {
+            else if(token.isBrace()) {
+                let searchType = token.type;
+                if(token.isOpening()) {
                     token.isFunction = !unaryFlag;
                     unaryFlag = true;
                     this.opstack.push(token);
@@ -84,8 +120,8 @@ class FQRShunter {
                             );
                             return null;
                         }
-                        else if(topToken.type === Token.Types.Paren) {
-                            if(topToken.raw === "(") {
+                        else if(topToken.type === searchType) {
+                            if(topToken.isOpening()) {
                                 isParen = true;
                             }
                             else {
@@ -103,41 +139,29 @@ class FQRShunter {
                             yield topToken;
                         }
                     } while(!isParen);
-                    if(topToken.isFunction) {
-                        if(lastToken.type === Token.Types.Paren && lastToken.raw === "(") {
-                            args = 0;
+                    if(lastToken.type === Token.Types.Paren && lastToken.raw === "(") {
+                        args = 0;
+                    }
+                    let res;
+                    if(token.raw === "]") {
+                        res = Token.gatherArray(args, topToken.isFunction);
+                    }
+                    else if(topToken.isFunction) {
+                        res = Token.functionArity(args);
+                    }
+                    if(res) {
+                        if(topToken.isFunction) {
+                            yield Token.swap(args);
+                            unaryFlag = yield* this.insertOp(res, unaryFlag);
                         }
-                        yield Token.functionArity(args);
+                        else {
+                            yield res;
+                        }
                     }
                 }
             }
             else if(token.type === Token.Types.Op) {
-                token.arity = unaryFlag ? 1 : 2;
-                unaryFlag = true;
-                let [ curPrecedence, curIsRight, curHeld ] = OpAttribtues[token.raw];
-                token.held = curHeld || [];
-
-                if(token.arity === 2) {
-                    let topToken, topPrecedence, topIsRight, allowPop;
-                    do {
-                        allowPop = false;
-                        topToken = this.opstack.pop();
-                        if(topToken && topToken.type === Token.Types.Op) {
-                            [ topPrecedence, topIsRight ] = OpAttribtues[topToken.raw];
-                            allowPop = topIsRight
-                                ? topPrecedence >  curPrecedence
-                                : topPrecedence >= curPrecedence;
-                            allowPop = allowPop || topToken.unary;
-                        }
-                        if(allowPop) {
-                            yield topToken;
-                        }
-                        else if(topToken) {
-                            this.opstack.push(topToken);
-                        }
-                    } while(topToken && allowPop);
-                }
-                this.opstack.push(token);
+                unaryFlag = yield* this.insertOp(token, unaryFlag);
             }
             else {
                 continue;
@@ -153,8 +177,8 @@ class FQRShunter {
     }
 }
 
-// console.log([...FQRShunter.shunt(process.argv[2])]
-// .map(e=>e.raw + (e.arity ? "@" + e.arity : ""))
-// )
+console.log([...FQRShunter.shunt(process.argv[2])]
+.map(e=>e+"")
+)
 
 module.exports = FQRShunter;

@@ -11,30 +11,77 @@ class Token {
             || this.type === Token.Types.Number;
     }
 
-    static functionArity(n) {
-        let token = new Token(n, Token.Types.Arity, null);
+    isBrace() {
+        return this.type === Token.Types.Paren
+            || this.type === Token.Types.Bracket;
+    }
+
+    isOpening() {
+        return this.raw === "(" || this.raw === "[";
+    }
+
+    isCallable() {
+        return this.type === Token.Types.Op
+            || this.type === Token.Types.Arity
+            || this.type === Token.Types.Array;
+    }
+
+    toString() {
+        let build = "";
+        try {
+            build += this.raw;
+        }
+        catch(e) {
+            build += "<?>";
+        }
+        if(this.arity) {
+            build += "@" + this.arity;
+        }
+        return build;
+    }
+
+    static swap(n) {
+        let token = new Token(null, Token.Types.Swap, null);
         token.arity = n;
+        return token;
+    }
+
+    static functionArity(n) {
+        let token = new Token(Token.Types.Callable, Token.Types.Arity, null);
+        token.arity = n;
+        return token;
+    }
+
+    static gatherArray(n, isFunction) {
+        let token = new Token(Token.Types.Callable, Token.Types.Array, null);
+        token.arity = n;
+        token.isFunction = isFunction;
         return token;
     }
 }
 Token.Types = {
-    Word:   Symbol("Token.Types.Word"),
-    Op:     Symbol("Token.Types.Op"),
-    Space:  Symbol("Token.Types.Space"),
-    String: Symbol("Token.Types.String"),
-    Number: Symbol("Token.Types.Number"),
-    Paren:  Symbol("Token.Types.Paren"),
-    Sep:    Symbol("Token.Types.Sep"),
-    Comma:  Symbol("Token.Types.Comma"),
-    Arity:  Symbol("Token.Types.Arity"),
+    Word:       Symbol("Token.Types.Word"),
+    Op:         Symbol("Token.Types.Op"),
+    Space:      Symbol("Token.Types.Space"),
+    String:     Symbol("Token.Types.String"),
+    Number:     Symbol("Token.Types.Number"),
+    Paren:      Symbol("Token.Types.Paren"),
+    Bracket:    Symbol("Token.Types.Bracket"),
+    Sep:        Symbol("Token.Types.Sep"),
+    Comma:      Symbol("Token.Types.Comma"),
+    Arity:      Symbol("Token.Types.Arity"),
+    Array:      Symbol("Token.Types.Array"),
+    Callable:   Symbol("Token.Types.Callable"),
+    Swap:       Symbol("Token.Types.Callable"),
 };
 
 const PARSE_REGEXES = [
     [/;/,               Token.Types.Sep],
     [/,/,               Token.Types.Comma],
     [/\d+/,             Token.Types.Number],
-    [/[+-\/*^@=]/,      Token.Types.Op],
+    [/[+-\/*^@=.]/,     Token.Types.Op],
     [/\s+/,             Token.Types.Space],
+    [/[\[\]]/,          Token.Types.Bracket],
     [/[()]/,            Token.Types.Paren],
     [/'(''|[^'])+'/,    Token.Types.String],
     [/"(""|[^"])+"/,    Token.Types.String],

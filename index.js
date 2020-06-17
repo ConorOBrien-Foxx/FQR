@@ -1,5 +1,6 @@
 const FQRState = require("./state.js");
 const path = require("path");
+const fs = require("fs");
 
 const fqr = {};
 
@@ -13,6 +14,7 @@ fqr.fns = {
     update: function (name, value) {
         return this.define(name, value);
     },
+    get: (x, y) => x[y],
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -26,6 +28,7 @@ fqr.operators = {
     "/": fqr.opFunction(null, fqr.fns.div2),
     "*": fqr.opFunction(null, fqr.fns.mul2),
     "=": fqr.opFunction(null, fqr.fns.update),
+    ".": fqr.opFunction(null, fqr.fns.get),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {
@@ -49,7 +52,13 @@ fqr.run = function runScript (script, params) {
     let headVariables = "abcd";
     params.slice(0, 4).forEach((param, i) => {
         let name = headVariables[i];
-        let value = eval(param);
+        let value;
+        try {
+            value = fqr.loadFile(param);
+        }
+        catch(e) {
+            value = eval(param);
+        }
         state.define(name, value);
     });
     state.define("print", console.log);
