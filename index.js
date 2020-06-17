@@ -57,9 +57,19 @@ fqr.fns = {
             return res;
         }
     },
-    map: (f, a) => a.map(e => f(e)),
+    map: (f, a) => {
+        if(Array.isArray(a)) {
+            return a.map(e => f(e));
+        }
+
+        let res = {};
+        for(let [key, value] of Object.entries(a)) {
+            res[key] = f(value);
+        }
+        return res;
+    },
     bond: (a, b) => {
-        console.log(a,b);
+        // console.log(a,b);
         let res = typeof a === "function"
             ? (...rest) => a(...rest, b)
             : (...rest) => b(a, ...rest);
@@ -91,24 +101,29 @@ fqr.fns = {
         if(Array.isArray(a)) {
             return a.filter(e => f(e));
         }
-        // else {
-        //     let res = {};
-        //     for(let [key, value] of Object.entries(a)) {
-        //         if(!fqr.fns.has(b, key)) {
-        //             res[key] = value;
-        //         }
-        //     }
-        //     return res;
-        // }
+        // object case
+        let res = {};
+        for(let [key, value] of Object.entries(a)) {
+            if(f(value)) {
+                res[key] = value;
+            }
+        }
+        return res;
     },
-    eye: function (db, path, needle) {
+    eye: (db, path, needle) => {
         for(let [key, value] of Object.entries(db)) {
             if(value[path] === needle) {
                 return key;
             }
         }
         return null;
-    }
+    },
+    equal: (a, b) => {
+        return a === b;
+    },
+    nequal: (a, b) => {
+        return !fqr.fns.equal(a, b);
+    },
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -132,6 +147,8 @@ fqr.operators = {
     ":":  fqr.opFunction(fqr.fns.range1, fqr.fns.range),
     "..": fqr.opFunction(fqr.fns.exrange1, fqr.fns.exrange),
     "#":  fqr.opFunction(fqr.fns.size, null),
+    "==": fqr.opFunction(null, fqr.fns.equal),
+    "!=": fqr.opFunction(null, fqr.fns.nequal),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {
@@ -160,6 +177,9 @@ fqr.DefaultVariables = {
     le: /\r?\n/,
     lines: (s) => s.trim().split(fqr.DefaultVariables.le),
     eye: fqr.fns.eye,
+    keys: Object.keys,
+    values: Object.values,
+    entries: Object.entries,
 };
 
 fqr.run = function runScript (script, params) {
@@ -238,6 +258,11 @@ if(require.main === module) {
 
     let value = fqr.run(script, params);
     if(typeof value !== "undefined") {
-        console.log(value);
+        if(flags.indexOf("r") !== -1) {
+            process.stdout.write(value.toString());
+        }
+        else {
+            console.log(value);
+        }
     }
 }

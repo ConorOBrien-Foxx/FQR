@@ -15,20 +15,28 @@ const OpAttribtues = {
     "*":  [ 30,  false ],
     "/":  [ 30,  false ],
 
-    "+":  [ 10,  false ],
-    "-":  [ 10,  false ],
+    "+":  [ 25,  false ],
+    "-":  [ 25,  false ],
 
-    ":":  [ 9,   false ],
-    "..": [ 9,   false ],
+    ":":  [ 20,   false ],
+    "..": [ 20,   false ],
 
-    "~":  [ 7,   false ],
-    "//": [ 7,   false ],
-    "=>": [ 7,   false ],
-    "#":  [ 7,   false ],
+    "~":  [ 15,   false ],
+    "//": [ 15,   false ],
+    "#":  [ 15,   false ],
 
-    "=":  [ 5,   false, [ true, false ]],
+    "=>": [ 10,   false ],
 
-    "|":  [ 0,   false ],
+    "|":  [ 5,   false ],
+
+    "==": [ 3,   false ],
+    "!=": [ 3,   false ],
+    "<":  [ 3,   false ],
+    "<=": [ 3,   false ],
+    ">":  [ 3,   false ],
+    ">=": [ 3,   false ],
+
+    "=":  [ 0,   false, [ true, false ]],
 };
 
 let UnaryPrecedence = {
