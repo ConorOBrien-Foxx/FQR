@@ -102,13 +102,14 @@ Token.Types = {
     Array:      Symbol("Token.Types.Array"),
     Callable:   Symbol("Token.Types.Callable"),
     Swap:       Symbol("Token.Types.Swap"),
+    Unknown:    Symbol("Token.Types.Unknown"),
 };
 
 const PARSE_REGEXES = [
     [/;/,               Token.Types.Sep],
     [/,/,               Token.Types.Comma],
     [/\d+/,             Token.Types.Number],
-    [/[+-\/*^@=.|~&]|=>|\/\//, Token.Types.Op],
+    [/=>|\/\/|\.\.|[+-\/*^@=.|~&:#]/, Token.Types.Op],
     [/\s+/,             Token.Types.Space],
     [/[\[\]]/,          Token.Types.Bracket],
     [/[()]/,            Token.Types.Paren],
@@ -116,6 +117,7 @@ const PARSE_REGEXES = [
     [/"(""|[^"])+"/,    Token.Types.String],
     [/<<.+?>>/,         Token.Types.String],
     [/\w+/,             Token.Types.Word],
+    [/./,               Token.Types.Unknown],
 ];
 
 class FQRParser {
@@ -135,6 +137,9 @@ class FQRParser {
                 this.processString = this.processString.slice(raw.length);
                 let res = new Token(raw, type, this.offset);
                 this.offset += raw.length;
+                if(type === Token.Types.Unknown) {
+                    console.error("Unknown Token encountered: ", res);
+                }
                 return res;
             }
         }

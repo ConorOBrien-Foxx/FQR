@@ -1,4 +1,4 @@
-const FQRState = require("./state.js");
+const FQRState = require("./src/state.js");
 const path = require("path");
 const fs = require("fs");
 
@@ -66,6 +66,49 @@ fqr.fns = {
         console.log("res", res, res("a\nb"));
         return res;
     },
+    range: (a, b) => {
+        let res = [];
+        while(b >= a) {
+            res[b - a] = b--;
+        }
+        return res;
+    },
+    range1: (a) => fqr.fns.range(0, a),
+    exrange: (a, b) => {
+        let res = [];
+        while(b --> a) {
+            res[b - a] = b;
+        }
+        return res;
+    },
+    exrange1: (a) => fqr.fns.exrange(0, a),
+    size: (a) => a.length,
+    filter: (a, f) => {
+        if(Array.isArray(f)) {
+            let arr = f;
+            f = (e) => fqr.fns.has(arr, e);
+        }
+        if(Array.isArray(a)) {
+            return a.filter(e => f(e));
+        }
+        // else {
+        //     let res = {};
+        //     for(let [key, value] of Object.entries(a)) {
+        //         if(!fqr.fns.has(b, key)) {
+        //             res[key] = value;
+        //         }
+        //     }
+        //     return res;
+        // }
+    },
+    eye: function (db, path, needle) {
+        for(let [key, value] of Object.entries(db)) {
+            if(value[path] === needle) {
+                return key;
+            }
+        }
+        return null;
+    }
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -86,6 +129,9 @@ fqr.operators = {
     "&":  fqr.opFunction(null, fqr.fns.bond),
     "=>": fqr.opFunction(null, fqr.fns.map),
     "//": fqr.opFunction(null, fqr.fns.filter),
+    ":":  fqr.opFunction(fqr.fns.range1, fqr.fns.range),
+    "..": fqr.opFunction(fqr.fns.exrange1, fqr.fns.exrange),
+    "#":  fqr.opFunction(fqr.fns.size, null),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {
@@ -112,10 +158,8 @@ fqr.DefaultVariables = {
     tb: "\t",
     ws: /\s+/,
     le: /\r?\n/,
-    f: (a) => a*3,
-    g: (a) => a+1,
-    // f: (...args) => args.reverse(),
-    a: { f: (a,b,c)=>a+b }
+    lines: (s) => s.trim().split(fqr.DefaultVariables.le),
+    eye: fqr.fns.eye,
 };
 
 fqr.run = function runScript (script, params) {
@@ -168,13 +212,25 @@ if(require.main === module) {
     }
 
     if(flags.indexOf("S") !== -1) {
-        const FQRShunter = require("./shunt.js");
+        const FQRShunter = require("./src/shunt.js");
         let shunted = FQRShunter.shunt(script);
         // console.log([...shunted].map(e => e.toString()));
         let i = 0;
         for(let s of shunted) {
             let is = (i + ":").padEnd(3, " ");
             console.log(is, s.readable());
+            i++;
+        }
+        return;
+    }
+    if(flags.indexOf("T") !== -1) {
+        const FQRParser = require("./src/parse.js");
+        let parsed = FQRParser.parse(script);
+        // console.log([...shunted].map(e => e.toString()));
+        let i = 0;
+        for(let p of parsed) {
+            let is = (i + ":").padEnd(3, " ");
+            console.log(is, p);
             i++;
         }
         return;

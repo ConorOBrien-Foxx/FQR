@@ -1,9 +1,9 @@
 const assert = require("assert");
 
 const fqr = require("../index.js");
-const FQRParser = require("../parse.js");
+const FQRParser = require("../src/parse.js");
 const { Token } = FQRParser;
-const FQRShunter = require("../shunt.js");
+const FQRShunter = require("../src/shunt.js");
 
 describe("FQRParser", function () {
     describe("Token", function () {

@@ -20,7 +20,13 @@ class FQRState {
     }
 
     getVariable(name) {
-        return this.state[name];
+        if(name in this.state) {
+            return this.state[name];
+        }
+        else {
+            console.error("Undefined variable:", name);
+            return;
+        }
     }
 
     parseValue(value) {
@@ -88,7 +94,6 @@ class FQRState {
                     args = arity ? this.stack.splice(arity) : [];
                 }
                 let top = this.stack.pop();
-                // console.log("TOP!", top);
                 fn = this.parseValue(top);
             }
             else {

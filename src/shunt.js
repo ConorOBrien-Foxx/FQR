@@ -18,14 +18,22 @@ const OpAttribtues = {
     "+":  [ 10,  false ],
     "-":  [ 10,  false ],
 
+    ":":  [ 9,   false ],
+    "..": [ 9,   false ],
+
     "~":  [ 7,   false ],
     "//": [ 7,   false ],
     "=>": [ 7,   false ],
+    "#":  [ 7,   false ],
 
     "=":  [ 5,   false, [ true, false ]],
 
     "|":  [ 0,   false ],
 };
+
+let UnaryPrecedence = {
+    "@": 105,
+}
 
 class FQRShunter {
     constructor(string) {
@@ -163,14 +171,16 @@ class FQRShunter {
                     }
                     if(res) {
                         if(topToken.isFunction) {
-                            // console.log("TOP", topToken);
                             // console.log("opstack", this.opstack);
                             let optop = this.opstack.pop();
                             if(optop) {
                                 if(optop.type === Token.Types.Op) {
                                     let myPrec = OpAttribtues[Token.Types.Callable][0];
-                                    console.log(optop.raw);
+                                    // console.log(optop.raw);
                                     let prec = OpAttribtues[optop.raw][0];
+                                    if(optop.arity === 1) {
+                                        prec = UnaryPrecedence[optop.raw] || prec;
+                                    }
                                     // console.log("OPTOP", optop, prec, myPrec);
                                     if(prec > myPrec)
                                     {
