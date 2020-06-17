@@ -10,6 +10,7 @@ a.b  a[b]       memory access
 .a              function that gets a property of input
                 (.a)(b)  b.a
 n | f | g       pipes - g(f(n))
+a ~ b           a without b
 
 planned
 
@@ -22,7 +23,6 @@ and, or, xor    logical comparison operators
 
 .+ .- ./ .* .^  vectorized operators
 
-a ~ b           a without b
 
 f => a          map f over a
 a // f          filter a by f

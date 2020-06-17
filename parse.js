@@ -34,14 +34,14 @@ class Token {
         catch(e) {
             build += "<?>";
         }
-        if(this.arity) {
+        if(typeof this.arity !== "undefined") {
             build += "@" + this.arity;
         }
         return build;
     }
 
     static swap(n) {
-        let token = new Token(null, Token.Types.Swap, null);
+        let token = new Token("SWAP", Token.Types.Swap, null);
         token.arity = n;
         return token;
     }
@@ -72,14 +72,14 @@ Token.Types = {
     Arity:      Symbol("Token.Types.Arity"),
     Array:      Symbol("Token.Types.Array"),
     Callable:   Symbol("Token.Types.Callable"),
-    Swap:       Symbol("Token.Types.Callable"),
+    Swap:       Symbol("Token.Types.Swap"),
 };
 
 const PARSE_REGEXES = [
     [/;/,               Token.Types.Sep],
     [/,/,               Token.Types.Comma],
     [/\d+/,             Token.Types.Number],
-    [/[+-\/*^@=.|]/,    Token.Types.Op],
+    [/[+-\/*^@=.|~]/,   Token.Types.Op],
     [/\s+/,             Token.Types.Space],
     [/[\[\]]/,          Token.Types.Bracket],
     [/[()]/,            Token.Types.Paren],

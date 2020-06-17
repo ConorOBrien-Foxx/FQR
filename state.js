@@ -5,6 +5,8 @@ class FQRState {
     constructor(fqr) {
         this.state = {};
         this.fqr = fqr;
+
+        Object.assign(this.state, this.fqr.DefaultVariables);
     }
 
     newLocalState() {
@@ -62,10 +64,10 @@ class FQRState {
                 stack.push(token);
             }
             else if(token.type === Token.Types.Swap) {
-                swap = stack.splice(-token.arity);
+                swap = token.arity ? stack.splice(-token.arity) : [];
             }
             else if(token.isCallable()) {
-                let held = token.held || [];
+                let held = token.held;
                 let args;
                 let after = [];
                 let fn;
@@ -80,16 +82,22 @@ class FQRState {
                         after.push(top);
                     }
                 }
-                else {
-                    // console.log("Stack?", stack);
-                    let top = stack.pop();
+                else if(token.type === Token.Types.Arity) {
                     if(swap) {
                         args = swap;
                         swap = null;
                     }
+                    else {
+                        let arity = -token.arity + 1;
+                        console.log(arity, token.arity);
+                        args = arity ? stack.splice(arity) : [];
+                    }
+                    let top = stack.pop();
                     fn = this.parseValue(top);
                 }
-                // console.log("fn",fn);
+                else {
+                    console.error("Unanticipated callable type", token.type);
+                }
                 fn = fn.bind(this);
 
                 if(!args) {
@@ -105,10 +113,10 @@ class FQRState {
 
                 let value = fn(...args);
                 stack.push(value);
-                if(swap) {
-                    stack.push(...swap);
-                    swap = null;
-                }
+                // if(swap) {
+                //     stack.push(...swap);
+                //     swap = null;
+                // }
             }
         }
 

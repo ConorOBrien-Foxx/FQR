@@ -17,6 +17,8 @@ const OpAttribtues = {
     "+": [ 10,  false ],
     "-": [ 10,  false ],
 
+    "~": [ 7,   false ],
+
     "=": [ 5,   false, [ true, false ]],
 
     "|": [ 0,   false ],
@@ -33,7 +35,7 @@ class FQRShunter {
         unaryFlag = true;
         let [ curPrecedence, curIsRight, curHeld ] = OpAttribtues[token.raw];
         token.held = curHeld || [];
-        if(typeof token.held !== "function") {
+        if(typeof (token.held) !== "function") {
             let held = token.held;
             token.held = (index) => held[index];
         }

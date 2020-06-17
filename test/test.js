@@ -93,6 +93,11 @@ describe("FQRParser", function () {
                 token.arity = 3;
                 assert.equal(token.toString(), "f@3");
             });
+            it("properly displays tokens with arity of 0", function () {
+                let token = new Token(null, Token.Types.Swap, 0);
+                token.arity = 0;
+                assert.equal(token.toString(), "null@0");
+            });
             it("properly displays symbol tokens", function () {
                 let symbolToken = new Token(Token.Types.Callable, Token.Types.Arity, 3);
                 assert.equal(symbolToken.toString(), "<?>");

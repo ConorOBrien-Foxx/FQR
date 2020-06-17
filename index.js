@@ -14,7 +14,13 @@ fqr.fns = {
     update: function (name, value) {
         return this.define(name.raw, value);
     },
-    get: (x, y) => x[y],
+    get: (x, y) => {
+        let res = x[y];
+        if(typeof res === "function") {
+            res = res.bind(x);
+        }
+        return res;
+    },
     compose: (f, g) => (...args) => f(g(...args)),
     formFunction: function (string) {
         let [ match, args, body ] = string.match(/(\w+(?:,\s*\w+)*)?\s*:\s*(.+)/);
@@ -28,8 +34,30 @@ fqr.fns = {
             return value;
         }
     },
-    propda: (key) => (obj) => obj[key.raw],
+    propda: (key) => (obj) =>
+        !obj
+                ? (obj, ...args) => obj[key.raw](...args)
+                : obj[key.raw],
     pipe: (n, f) => f(n),
+    has: (a, e) =>
+        Array.isArray(a)
+            ? a.indexOf(e) !== -1
+            : e in a,
+    without: (a, b) => {
+        if(Array.isArray(a)) {
+            return a.filter(e => !fqr.fns.has(b, e));
+        }
+        else {
+            let res = {};
+            for(let [key, value] of Object.entries(a)) {
+                if(!fqr.fns.has(b, key)) {
+                    res[key] = value;
+                }
+            }
+            return res;
+        }
+    },
+    split: (str, on) => str.split(on),
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -46,6 +74,7 @@ fqr.operators = {
     ".": fqr.opFunction(fqr.fns.propda, fqr.fns.get),
     "@": fqr.opFunction(fqr.fns.formFunction, fqr.fns.compose),
     "|": fqr.opFunction(null, fqr.fns.pipe),
+    "~": fqr.opFunction(null, fqr.fns.without),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {
@@ -64,6 +93,17 @@ fqr.loadFile = function loadFile (pathToFile) {
     return file;
 };
 
+fqr.DefaultVariables = {
+    print: console.log,
+    split: fqr.fns.split,
+    lf: "\n",
+    cr: "\r",
+    sp: " ",
+    tb: "\t",
+    ws: /\s+/,
+    le: /\r?\n/,
+};
+
 fqr.run = function runScript (script, params) {
     let state = new FQRState(fqr);
     let headVariables = "abcd";
@@ -78,7 +118,7 @@ fqr.run = function runScript (script, params) {
         }
         state.define(name, value);
     });
-    state.define("print", console.log);
+
     state.define("args", params);
     return state.inject(script);
 };
@@ -111,6 +151,13 @@ if(require.main === module) {
         else {
             params.push(arg);
         }
+    }
+
+    if(flags.indexOf("S") !== -1) {
+        const FQRShunter = require("./shunt.js");
+        let shunted = FQRShunter.shunt(script);
+        console.log([...shunted].map(e => e.toString()));
+        return;
     }
 
     let value = fqr.run(script, params);
