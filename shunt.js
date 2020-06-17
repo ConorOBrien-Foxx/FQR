@@ -3,7 +3,7 @@ const { Token } = FQRParser;
 
 // precedence, isRight, held
 const OpAttribtues = {
-    ".": [ 110, false, [ false, true ]],
+    ".": [ 110, false, (i, s) => s === 1 ? true : i === 1],
 
     [Token.Types.Callable]: [100, false],
 
@@ -17,7 +17,9 @@ const OpAttribtues = {
     "+": [ 10,  false ],
     "-": [ 10,  false ],
 
-    "=": [ 0,   false, [ true, false ]],
+    "=": [ 5,   false, [ true, false ]],
+
+    "|": [ 0,   false ],
 };
 
 class FQRShunter {
@@ -31,6 +33,10 @@ class FQRShunter {
         unaryFlag = true;
         let [ curPrecedence, curIsRight, curHeld ] = OpAttribtues[token.raw];
         token.held = curHeld || [];
+        if(typeof token.held !== "function") {
+            let held = token.held;
+            token.held = (index) => held[index];
+        }
 
         if(token.arity === 2) {
             let topToken, topPrecedence, topIsRight, allowPop;
@@ -176,9 +182,5 @@ class FQRShunter {
         return shunter.shunt();
     }
 }
-
-console.log([...FQRShunter.shunt(process.argv[2])]
-.map(e=>e+"")
-)
 
 module.exports = FQRShunter;

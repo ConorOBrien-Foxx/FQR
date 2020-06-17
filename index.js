@@ -12,9 +12,24 @@ fqr.fns = {
     div2: (x, y) => x / y,
     mul2: (x, y) => x * y,
     update: function (name, value) {
-        return this.define(name, value);
+        return this.define(name.raw, value);
     },
     get: (x, y) => x[y],
+    compose: (f, g) => (...args) => f(g(...args)),
+    formFunction: function (string) {
+        let [ match, args, body ] = string.match(/(\w+(?:,\s*\w+)*)?\s*:\s*(.+)/);
+        let params = args.split(/\s*,\s*/);
+        return (...args) => {
+            let local = this.newLocalState();
+            for(let name of params) {
+                local.define(name, this.parseValue(args.shift()));
+            }
+            let value = local.inject(body);
+            return value;
+        }
+    },
+    propda: (key) => (obj) => obj[key.raw],
+    pipe: (n, f) => f(n),
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -28,7 +43,9 @@ fqr.operators = {
     "/": fqr.opFunction(null, fqr.fns.div2),
     "*": fqr.opFunction(null, fqr.fns.mul2),
     "=": fqr.opFunction(null, fqr.fns.update),
-    ".": fqr.opFunction(null, fqr.fns.get),
+    ".": fqr.opFunction(fqr.fns.propda, fqr.fns.get),
+    "@": fqr.opFunction(fqr.fns.formFunction, fqr.fns.compose),
+    "|": fqr.opFunction(null, fqr.fns.pipe),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {

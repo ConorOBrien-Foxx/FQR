@@ -7,6 +7,12 @@ class FQRState {
         this.fqr = fqr;
     }
 
+    newLocalState() {
+        let local = new FQRState(this.fqr);
+        local.state = Object.assign({}, this.state);
+        return local;
+    }
+
     define(name, value) {
         return this.state[name] = value;
     }
@@ -75,21 +81,27 @@ class FQRState {
                     }
                 }
                 else {
+                    // console.log("Stack?", stack);
                     let top = stack.pop();
-                    args = swap;
+                    if(swap) {
+                        args = swap;
+                        swap = null;
+                    }
                     fn = this.parseValue(top);
                 }
+                // console.log("fn",fn);
                 fn = fn.bind(this);
 
                 if(!args) {
-                    args = stack.splice(-token.arity)
-                       .map((el, i) =>
-                           held[i]
-                               ? el.raw || el
-                               : this.parseValue(el)
-                       )
-                       .concat(after);
+                    args = stack.splice(-token.arity);
                 }
+                args = args
+                   .map((el, i) =>
+                       held && held(i, args.length)
+                           ? el
+                           : this.parseValue(el)
+                   )
+                   .concat(after);
 
                 let value = fn(...args);
                 stack.push(value);
