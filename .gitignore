@@ -1,3 +1,6 @@
+# Repository-specific
+test_info/
+
 # Logs
 logs
 *.log
