@@ -10,6 +10,12 @@ class Token {
             || this.type === Token.Types.String
             || this.type === Token.Types.Number;
     }
+
+    static functionArity(n) {
+        let token = new Token(n, Token.Types.Arity, null);
+        token.arity = n;
+        return token;
+    }
 }
 Token.Types = {
     Word:   Symbol("Token.Types.Word"),
@@ -18,16 +24,22 @@ Token.Types = {
     String: Symbol("Token.Types.String"),
     Number: Symbol("Token.Types.Number"),
     Paren:  Symbol("Token.Types.Paren"),
+    Sep:    Symbol("Token.Types.Sep"),
+    Comma:  Symbol("Token.Types.Comma"),
+    Arity:  Symbol("Token.Types.Arity"),
 };
 
 const PARSE_REGEXES = [
+    [/;/,               Token.Types.Sep],
+    [/,/,               Token.Types.Comma],
     [/\d+/,             Token.Types.Number],
-    [/[+-\/*^]/,        Token.Types.Op],
+    [/[+-\/*^@=]/,      Token.Types.Op],
     [/\s+/,             Token.Types.Space],
     [/[()]/,            Token.Types.Paren],
-    [/'(''|.)+?'/,      Token.Types.String],
-    [/"(""|.)+?"/,      Token.Types.String],
-    [/<<(.)+?>>/,       Token.Types.String],
+    [/'(''|[^'])+'/,    Token.Types.String],
+    [/"(""|[^"])+"/,    Token.Types.String],
+    [/<<.+?>>/,         Token.Types.String],
+    [/\w+/,             Token.Types.Word],
 ];
 
 class FQRParser {
