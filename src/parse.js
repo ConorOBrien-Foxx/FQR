@@ -105,12 +105,13 @@ Token.Types = {
     Unknown:    Symbol("Token.Types.Unknown"),
 };
 
+const TOKEN_REGEX = /=>|\/\/|\.\.|[<>=]=?|!=|[+-\/*^@.|~&:#]|and|or/;
 const PARSE_REGEXES = [
     [/;/,               Token.Types.Sep],
     [/,/,               Token.Types.Comma],
     [/\d+/,             Token.Types.Number],
     [/<<.+?>>/,         Token.Types.String],
-    [/=>|\/\/|\.\.|[<>=]=?|!=|[+-\/*^@.|~&:#]/, Token.Types.Op],
+    [TOKEN_REGEX,       Token.Types.Op],
     [/\s+/,             Token.Types.Space],
     [/[\[\]]/,          Token.Types.Bracket],
     [/[()]/,            Token.Types.Paren],

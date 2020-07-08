@@ -3,40 +3,43 @@ const { Token } = FQRParser;
 
 // precedence, isRight, held
 const OpAttribtues = {
-    ".":  [ 110, false, (i, s) => s === 1 ? true : i === 1],
+    ".":   [ 110, false, (i, s) => s === 1 ? true : i === 1],
 
     [Token.Types.Callable]: [100, false],
 
-    "@":  [ 90,  true  ],
-    "&":  [ 90,  false ],
+    "@":   [ 90,  true  ],
+    "&":   [ 90,  false ],
 
-    "^":  [ 60,  true  ],
+    "^":   [ 60,  true  ],
 
-    "*":  [ 30,  false ],
-    "/":  [ 30,  false ],
+    "*":   [ 30,  false ],
+    "/":   [ 30,  false ],
 
-    "+":  [ 25,  false ],
-    "-":  [ 25,  false ],
+    "+":   [ 25,  false ],
+    "-":   [ 25,  false ],
 
-    ":":  [ 20,   false ],
-    "..": [ 20,   false ],
+    ":":   [ 20,   false ],
+    "..":  [ 20,   false ],
 
-    "~":  [ 15,   false ],
-    "//": [ 15,   false ],
-    "#":  [ 15,   false ],
+    "~":   [ 15,   false ],
+    "//":  [ 15,   false ],
+    "#":   [ 15,   false ],
 
-    "=>": [ 10,   false ],
+    "=>":  [ 10,   false ],
 
-    "|":  [ 5,   false ],
+    "|":   [ 5,   false ],
 
-    "==": [ 3,   false ],
-    "!=": [ 3,   false ],
-    "<":  [ 3,   false ],
-    "<=": [ 3,   false ],
-    ">":  [ 3,   false ],
-    ">=": [ 3,   false ],
+    "==":  [ 3,   false ],
+    "!=":  [ 3,   false ],
+    "<":   [ 3,   false ],
+    "<=":  [ 3,   false ],
+    ">":   [ 3,   false ],
+    ">=":  [ 3,   false ],
 
-    "=":  [ 0,   false, [ true, false ]],
+    "and": [ 2,   false ],
+    "or":  [ 1,   false ],
+
+    "=":   [ 0,   false, [ true, false ]],
 };
 
 let UnaryPrecedence = {
