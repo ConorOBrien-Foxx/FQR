@@ -124,6 +124,12 @@ fqr.fns = {
     nequal: (a, b) => {
         return !fqr.fns.equal(a, b);
     },
+    and: (a, b) => {
+        return a && b;
+    },
+    or: (a, b) => {
+        return a || b;
+    },
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -132,23 +138,25 @@ fqr.opFunction = (...fns) => function (...args) {
 }
 
 fqr.operators = {
-    "+":  fqr.opFunction(fqr.fns.sum, fqr.fns.add2),
-    "-":  fqr.opFunction(fqr.fns.negate, fqr.fns.sub2),
-    "/":  fqr.opFunction(null, fqr.fns.div2),
-    "*":  fqr.opFunction(null, fqr.fns.mul2),
-    "=":  fqr.opFunction(null, fqr.fns.update),
-    ".":  fqr.opFunction(fqr.fns.propda, fqr.fns.get),
-    "@":  fqr.opFunction(fqr.fns.formFunction, fqr.fns.compose),
-    "|":  fqr.opFunction(null, fqr.fns.pipe),
-    "~":  fqr.opFunction(null, fqr.fns.without),
-    "&":  fqr.opFunction(null, fqr.fns.bond),
-    "=>": fqr.opFunction(null, fqr.fns.map),
-    "//": fqr.opFunction(null, fqr.fns.filter),
-    ":":  fqr.opFunction(fqr.fns.range1, fqr.fns.range),
-    "..": fqr.opFunction(fqr.fns.exrange1, fqr.fns.exrange),
-    "#":  fqr.opFunction(fqr.fns.size, null),
-    "==": fqr.opFunction(null, fqr.fns.equal),
-    "!=": fqr.opFunction(null, fqr.fns.nequal),
+    "+":   fqr.opFunction(fqr.fns.sum, fqr.fns.add2),
+    "-":   fqr.opFunction(fqr.fns.negate, fqr.fns.sub2),
+    "/":   fqr.opFunction(null, fqr.fns.div2),
+    "*":   fqr.opFunction(null, fqr.fns.mul2),
+    "=":   fqr.opFunction(null, fqr.fns.update),
+    ".":   fqr.opFunction(fqr.fns.propda, fqr.fns.get),
+    "@":   fqr.opFunction(fqr.fns.formFunction, fqr.fns.compose),
+    "|":   fqr.opFunction(null, fqr.fns.pipe),
+    "~":   fqr.opFunction(null, fqr.fns.without),
+    "&":   fqr.opFunction(null, fqr.fns.bond),
+    "=>":  fqr.opFunction(null, fqr.fns.map),
+    "//":  fqr.opFunction(null, fqr.fns.filter),
+    ":":   fqr.opFunction(fqr.fns.range1, fqr.fns.range),
+    "..":  fqr.opFunction(fqr.fns.exrange1, fqr.fns.exrange),
+    "#":   fqr.opFunction(fqr.fns.size, null),
+    "==":  fqr.opFunction(null, fqr.fns.equal),
+    "!=":  fqr.opFunction(null, fqr.fns.nequal),
+    "and": fqr.opFunction(null, fqr.fns.and),
+    "or":  fqr.opFunction(null, fqr.fns.or),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {
@@ -180,6 +188,8 @@ fqr.DefaultVariables = {
     keys: Object.keys,
     values: Object.values,
     entries: Object.entries,
+    true: true,
+    false: false,
 };
 
 fqr.run = function runScript (script, params) {
