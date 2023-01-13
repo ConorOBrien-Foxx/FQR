@@ -8,7 +8,8 @@ class Token {
     isData() {
         return this.type === Token.Types.Word
             || this.type === Token.Types.String
-            || this.type === Token.Types.Number;
+            || this.type === Token.Types.Number
+            || this.type === Token.Types.OpFn;
     }
 
     isBrace() {
@@ -91,6 +92,7 @@ class Token {
 Token.Types = {
     Word:       Symbol("Token.Types.Word"),
     Op:         Symbol("Token.Types.Op"),
+    OpFn:       Symbol("Token.Types.OpFn"),
     Space:      Symbol("Token.Types.Space"),
     String:     Symbol("Token.Types.String"),
     Number:     Symbol("Token.Types.Number"),
@@ -105,14 +107,17 @@ Token.Types = {
     Unknown:    Symbol("Token.Types.Unknown"),
 };
 
-const TOKEN_REGEX =
+const OP_REGEX =
     /\.[-+\/*^]|=>|\/\/|\.\.|[<>=]=?|!=|[-+\/*^@.|~&:#]|and|or/;
+const OP_FN_REGEX =
+    new RegExp("\\(\\s*(?:" + OP_REGEX.source + ")\\s*\\)");
 const PARSE_REGEXES = [
     [/;/,               Token.Types.Sep],
     [/,/,               Token.Types.Comma],
     [/\d+/,             Token.Types.Number],
     [/<<.+?>>/,         Token.Types.String],
-    [TOKEN_REGEX,       Token.Types.Op],
+    [OP_FN_REGEX,       Token.Types.OpFn],
+    [OP_REGEX,          Token.Types.Op],
     [/\s+/,             Token.Types.Space],
     [/[\[\]]/,          Token.Types.Bracket],
     [/[()]/,            Token.Types.Paren],

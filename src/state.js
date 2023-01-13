@@ -54,8 +54,15 @@ class FQRState {
                     return value.raw;
             }
         }
+        else if(value.type === Token.Types.Number) {
+            return parseInt(value.raw);
+        }
+        else if(value.type === Token.Types.OpFn) {
+            return this.fqr.operators[value.raw.slice(1, -1)];
+        }
         else {
-            return eval(value.raw);
+            console.error("Unhandled value.type:", value.type);
+            return 42;
         }
     }
 
