@@ -73,7 +73,7 @@ fqr.fns = {
         let res = typeof a === "function"
             ? (...rest) => a(...rest, b)
             : (...rest) => b(a, ...rest);
-        console.log("res", res, res("a\nb"));
+        // console.log("res", res, res("a\nb"));
         return res;
     },
     range: (a, b) => {
@@ -130,6 +130,28 @@ fqr.fns = {
     or: (a, b) => {
         return a || b;
     },
+    greater: (a, b) => {
+        return a > b;
+    },
+    greaterequal: (a, b) => {
+        return a >= b;
+    },
+    less: (a, b) => {
+        return a < b;
+    },
+    lessequal: (a, b) => {
+        return a <= b;
+    },
+    count: (a, needle) => {
+        if(typeof needle !== "function") {
+            let oldNeedle = needle;
+            needle = (e) => fqr.fns.equal(e, oldNeedle);
+        }
+        return fqr.fns.filter(a, needle).length;
+    },
+    find: (a, fn) => {
+        return a.find(e => fn(e));
+    },
 };
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
@@ -157,6 +179,10 @@ fqr.operators = {
     "!=":  fqr.opFunction(null, fqr.fns.nequal),
     "and": fqr.opFunction(null, fqr.fns.and),
     "or":  fqr.opFunction(null, fqr.fns.or),
+    ">":   fqr.opFunction(null, fqr.fns.greater),
+    ">=":  fqr.opFunction(null, fqr.fns.greaterequal),
+    "<":   fqr.opFunction(null, fqr.fns.less),
+    "<=":  fqr.opFunction(null, fqr.fns.lessequal),
 };
 
 fqr.loadFile = function loadFile (pathToFile) {
@@ -183,6 +209,7 @@ fqr.DefaultVariables = {
     tb: "\t",
     ws: /\s+/,
     le: /\r?\n/,
+    undefined: undefined,
     lines: (s) => s.trim().split(fqr.DefaultVariables.le),
     eye: fqr.fns.eye,
     keys: Object.keys,
@@ -191,6 +218,12 @@ fqr.DefaultVariables = {
     true: true,
     false: false,
 };
+fqr.importDefault = function (...names) {
+    for(let name of names) {
+        fqr.DefaultVariables[name] = fqr.fns[name];
+    }
+}
+fqr.importDefault("count", "find")
 
 fqr.run = function runScript (script, params) {
     let state = new FQRState(fqr);

@@ -73,6 +73,9 @@ class FQRState {
             let fn;
             if(token.type === Token.Types.Op) {
                 fn = this.fqr.operators[token.raw];
+                if(!fn) {
+                    console.error("no such defined operator", token.raw);
+                }
             }
             else if(token.type === Token.Types.Array) {
                 fn = (...args) => args;
