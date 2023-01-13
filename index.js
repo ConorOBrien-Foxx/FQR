@@ -4,13 +4,36 @@ const fs = require("fs");
 
 const fqr = {};
 
+const vectorizeUnary = (fn, arg) =>
+    Array.isArray(arg)
+        ? arg.map(e => vectorizeUnary(fn, e))
+        : fn(arg);
+
+const vectorizeBinary = (fn, x, y) =>
+    Array.isArray(x)
+        ? Array.isArray(y)
+            ? x.slice(0, Math.min(x.length, y.length))
+               .map((e, i) => vectorizeBinary(fn, e, y[i]))
+            : x.map(e => vectorizeBinary(fn, e, y))
+        : Array.isArray(y)
+            ? y.map(e => vectorizeBinary(fn, x, e))
+            : fn(x, y);
+
+// TODO: different types, probably
 fqr.fns = {
     add2: (x, y) => x + y,
     sum: (a) => a.reduce(fqr.fns.add2, 0),
+    add2vec: (x, y) => vectorizeBinary(fqr.fns.add2, x, y),
     sub2: (x, y) => x - y,
     negate: (a) => -a,
+    sub2vec: (x, y) => vectorizeBinary(fqr.fns.sub2, x, y),
+    negatevec: (a) => vectorizeUnary(fqr.fns.negate, a),
     div2: (x, y) => x / y,
+    div2vec: (x, y) => vectorizeBinary(fqr.fns.div2, x, y),
     mul2: (x, y) => x * y,
+    mul2vec: (x, y) => vectorizeBinary(fqr.fns.mul2, x, y),
+    pow2: (x, y) => x ** y,
+    pow2vec: (x, y) => vectorizeBinary(fqr.fns.pow2, x, y),
     update: function (name, value) {
         return this.define(name.raw, value);
     },
@@ -40,12 +63,15 @@ fqr.fns = {
             : obj[key.raw],
     pipe: (n, f) => f(n),
     has: (a, e) =>
-        Array.isArray(a)
+        Array.isArray(a) || typeof a === "string"
             ? a.indexOf(e) !== -1
             : e in a,
     without: (a, b) => {
         if(Array.isArray(a)) {
             return a.filter(e => !fqr.fns.has(b, e));
+        }
+        else if(typeof a === "string") {
+            return a.replaceAll(b, "");
         }
         else {
             let res = {};
@@ -69,11 +95,9 @@ fqr.fns = {
         return res;
     },
     bond: (a, b) => {
-        // console.log(a,b);
         let res = typeof a === "function"
             ? (...rest) => a(...rest, b)
             : (...rest) => b(a, ...rest);
-        // console.log("res", res, res("a\nb"));
         return res;
     },
     range: (a, b) => {
@@ -153,17 +177,24 @@ fqr.fns = {
         return a.find(e => fn(e));
     },
 };
+
 fqr.opFunction = (...fns) => function (...args) {
     let fn = fns[args.length - 1] || fns[fns.length - 1];
     fn = fn.bind(this);
     return fn(...args);
-}
+};
 
 fqr.operators = {
     "+":   fqr.opFunction(fqr.fns.sum, fqr.fns.add2),
     "-":   fqr.opFunction(fqr.fns.negate, fqr.fns.sub2),
     "/":   fqr.opFunction(null, fqr.fns.div2),
     "*":   fqr.opFunction(null, fqr.fns.mul2),
+    "^":   fqr.opFunction(null, fqr.fns.pow2),
+    ".+":  fqr.opFunction(null, fqr.fns.add2vec),
+    ".-":  fqr.opFunction(fqr.fns.negatevec, fqr.fns.sub2vec),
+    "./":  fqr.opFunction(null, fqr.fns.div2vec),
+    ".*":  fqr.opFunction(null, fqr.fns.mul2vec),
+    ".^":  fqr.opFunction(null, fqr.fns.pow2vec),
     "=":   fqr.opFunction(null, fqr.fns.update),
     ".":   fqr.opFunction(fqr.fns.propda, fqr.fns.get),
     "@":   fqr.opFunction(fqr.fns.formFunction, fqr.fns.compose),
@@ -209,21 +240,27 @@ fqr.DefaultVariables = {
     tb: "\t",
     ws: /\s+/,
     le: /\r?\n/,
+    alpha: "abcdefghijklmnopqrstuvwxyz",
+    ALPHA: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     undefined: undefined,
     lines: (s) => s.trim().split(fqr.DefaultVariables.le),
     eye: fqr.fns.eye,
+    load: fqr.loadFile,
     keys: Object.keys,
     values: Object.values,
     entries: Object.entries,
+    json: JSON.parse,
     true: true,
     false: false,
 };
-fqr.importDefault = function (...names) {
+
+fqr.importDefaults = function (names) {
     for(let name of names) {
         fqr.DefaultVariables[name] = fqr.fns[name];
     }
 }
-fqr.importDefault("count", "find")
+
+fqr.importDefaults([ "count", "find" ]);
 
 fqr.run = function runScript (script, params) {
     let state = new FQRState(fqr);
@@ -249,22 +286,33 @@ module.exports = fqr;
 if(require.main === module) {
     let args = process.argv.slice(2);
     if(args.length === 0) {
-        console.warn("No arguments given.");
+        console.error("No arguments given.");
         console.warn("Usage:");
         console.warn("  fqr script [flags] [args]");
+        console.warn("flags:");
+        console.warn("  -f file   Reads code from file instead of argument");
+        console.warn("  -r        Outputs raw result instead of pretty");
+        console.warn("  -S        Shunted version of input without running code");
+        console.warn("  -T        Tokenized version of input without running code");
         process.exit(1);
     }
 
-    const isFlag = (str) => str[0] === "-" || str[0] === "/";
+    const isFlag = str => str[0] === "-" || str[0] === "/";
 
     let script = null;
-    let flags = [];
+    let flags = {};
     let params = [];
 
-    for(let arg of args) {
+    for(let i = 0; i < args.length; i++) {
+        let arg = args[i];
         if(isFlag(arg)) {
-            let flag = arg.slice(1)
-            flags.push(flag);
+            let flag = arg.slice(1);
+            if(flag === "f") {
+                script = fs.readFileSync(args[++i]).toString();
+            }
+            else {
+                flags[flag] = true;
+            }
         }
         else if(!script) {
             script = arg;
@@ -273,35 +321,39 @@ if(require.main === module) {
             params.push(arg);
         }
     }
-
-    if(flags.indexOf("S") !== -1) {
+    
+    let runCode = true;
+    
+    if(flags["S"]) {
+        console.log("Shunted:");
         const FQRShunter = require("./src/shunt.js");
         let shunted = FQRShunter.shunt(script);
-        // console.log([...shunted].map(e => e.toString()));
         let i = 0;
         for(let s of shunted) {
             let is = (i + ":").padEnd(3, " ");
             console.log(is, s.readable());
             i++;
         }
-        return;
+        runCode = false;
     }
-    if(flags.indexOf("T") !== -1) {
+    if(flags["T"]) {
+        console.log("Tokenized:");
         const FQRParser = require("./src/parse.js");
         let parsed = FQRParser.parse(script);
-        // console.log([...shunted].map(e => e.toString()));
         let i = 0;
         for(let p of parsed) {
             let is = (i + ":").padEnd(3, " ");
             console.log(is, p);
             i++;
         }
-        return;
+        runCode = false;
     }
+    
+    if(!runCode) return;
 
     let value = fqr.run(script, params);
     if(typeof value !== "undefined") {
-        if(flags.indexOf("r") !== -1) {
+        if(flags["r"]) {
             process.stdout.write(value.toString());
         }
         else {

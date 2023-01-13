@@ -14,18 +14,24 @@ const OpAttribtues = {
 
     "*":   [ 30,  false ],
     "/":   [ 30,  false ],
-
+    
     "+":   [ 25,  false ],
     "-":   [ 25,  false ],
 
-    ":":   [ 20,   false ],
-    "..":  [ 20,   false ],
+    ":":   [ 20,  false ],
+    "..":  [ 20,  false ],
+    
+    ".^":  [ 18,  false ],
+    "./":  [ 17,  false ],
+    ".*":  [ 17,  false ],
+    ".-":  [ 16,  false ],
+    ".+":  [ 16,  false ],
 
-    "~":   [ 15,   false ],
-    "//":  [ 15,   false ],
-    "#":   [ 15,   false ],
+    "~":   [ 15,  false ],
+    "//":  [ 15,  false ],
+    "#":   [ 15,  false ],
 
-    "=>":  [ 10,   false ],
+    "=>":  [ 10,  false ],
 
     "|":   [ 5,   false ],
 
@@ -44,7 +50,7 @@ const OpAttribtues = {
 
 let UnaryPrecedence = {
     "@": 105,
-}
+};
 
 class FQRShunter {
     constructor(string) {

@@ -105,7 +105,8 @@ Token.Types = {
     Unknown:    Symbol("Token.Types.Unknown"),
 };
 
-const TOKEN_REGEX = /=>|\/\/|\.\.|[<>=]=?|!=|[+-\/*^@.|~&:#]|and|or/;
+const TOKEN_REGEX =
+    /\.[-+\/*^]|=>|\/\/|\.\.|[<>=]=?|!=|[-+\/*^@.|~&:#]|and|or/;
 const PARSE_REGEXES = [
     [/;/,               Token.Types.Sep],
     [/,/,               Token.Types.Comma],

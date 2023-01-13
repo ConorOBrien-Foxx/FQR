@@ -1,5 +1,7 @@
 # Repository-specific
 test_info/
+test.fqr
+test.json
 
 # Logs
 logs
