@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const FQRState = require("./src/state.js");
 const path = require("path");
 const fs = require("fs");
